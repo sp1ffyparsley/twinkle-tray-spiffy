@@ -1,0 +1,53 @@
+name: Verify Spiffy Fork
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    name: Windows source and package
+    runs-on: windows-2025
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install dependencies from lockfile
+        run: npm ci
+      - name: Run regression tests
+        run: npm test
+      - name: Compile renderer
+        run: npm run parcel-build
+      - name: Build unsigned Windows QA package without publishing
+        run: npx electron-builder --x64 --win nsis --publish never
+
+  mac-source:
+    name: macOS source and shared-panel verification
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install JavaScript dependencies without Windows native install scripts
+        run: npm ci --ignore-scripts
+      - name: Check shared and Mac-specific source
+        run: |
+          node --check src/MacMain.js
+          node --check src/MacDisplayBackend.js
+          node --check src/MacBuiltInBackend.js
+          node --test tests/mac-*.test.js tests/popup-focus-guard.test.js tests/preset-appearance.test.js tests/quick-presets.test.js
+      - name: Compile the shared React brightness panel
+        run: npm run parcel-build

@@ -1,0 +1,54 @@
+# dependencies
+node_modules/
+
+# production
+build/
+dist/
+
+# misc
+.cache
+.DS_Store
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.idea
+
+.log
+logs/
+*.pfx
+.env
+cache/
+debug.log
+bin/
+node_modules/
+build/
+dist-local/
+dist-macos/
+.cache/
+tests/.tmp-night-contract/
+
+# Local personal research, prompt history and never-publish artifacts.
+AI_MASTER_PROMPT.md
+_reports/
+_test_tmp/
+*.log
+*.pending
+*.p12
+*.pfx
+*.pem
+*.key
+*.keystore
+.env.*
+!*.env.example
+.pytest_cache/
+__pycache__/
+*.pyc
+*.exe
+*.msi
+*.zip
+*.blockmap

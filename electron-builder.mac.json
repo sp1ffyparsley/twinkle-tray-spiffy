@@ -1,0 +1,47 @@
+{
+  "appId": "com.spiffy.twinkle-tray",
+  "productName": "Twinkle Tray Spiffy",
+  "compression": "normal",
+  "asar": true,
+  "extraMetadata": {
+    "main": "src/MacMain.js"
+  },
+  "directories": {
+    "output": "dist-macos",
+    "buildResources": "resources"
+  },
+  "files": [
+    "package.json",
+    "LICENSE",
+    "README.md",
+    "src/MacMain.js",
+    "src/MacDisplayBackend.js",
+    "src/MacBuiltInBackend.js",
+    "src/QuickPresets.js",
+    "src/MonitorWarmthMapping.js",
+    "src/panel-preload.js",
+    "src/settings-preload.js",
+    "src/localization/en.json",
+    "src/assets/logo.png",
+    "build/index.html",
+    "build/mac-settings.html",
+    "build/*.js",
+    "build/*.css",
+    "!build/*.map",
+    "!node_modules/**",
+    "!dist-local/**",
+    "!dist-macos/**",
+    "!_reports/**",
+    "!_test_tmp/**"
+  ],
+  "mac": {
+    "target": [
+      {
+        "target": "dmg",
+        "arch": ["arm64"]
+      }
+    ],
+    "category": "public.app-category.utilities",
+    "icon": "src/assets/logo-512.png"
+  }
+}
