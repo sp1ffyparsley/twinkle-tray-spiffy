@@ -3,6 +3,7 @@
   "productName": "Twinkle Tray Spiffy",
   "compression": "normal",
   "asar": true,
+  "npmRebuild": false,
   "extraMetadata": {
     "main": "src/MacMain.js"
   },

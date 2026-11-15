@@ -7,6 +7,12 @@ on:
 permissions:
   contents: read
 
+# New commits supersede old verification runs. Do not keep multiple expensive
+# Windows native builds or Mac packages queued for the same branch.
+concurrency:
+  group: spiffy-verify-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   windows:
     name: Windows source and package
@@ -27,7 +33,12 @@ jobs:
       - name: Install dependencies from lockfile
         run: npm ci
       - name: Run regression tests
-        run: npm test
+        # Some Windows-native fixtures reuse loopback/native resources; do not
+        # launch test files against each other on a headless shared runner.
+        # Preserve the complete suite, but cap a stuck native fixture so CI
+        # produces a usable failure log instead of holding the runner forever.
+        timeout-minutes: 5
+        run: node --test --test-concurrency=1 tests/*.test.js
       - name: Compile renderer
         run: npm run parcel-build
       - name: Build unsigned Windows QA package without publishing

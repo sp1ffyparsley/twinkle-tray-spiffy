@@ -89,6 +89,10 @@
     }
     .quick-preset-button:disabled { opacity: .5; cursor: wait; }
     .quick-preset-button:hover:not(:disabled) { filter: brightness(1.16); }
+    .quick-preset-button[aria-busy="true"] {
+        outline: 1px solid var(--system-accent-color);
+        outline-offset: -1px;
+    }
     .quick-preset-button:focus-visible { outline: 2px solid var(--system-accent-color); outline-offset: 2px; }
     .quick-preset-symbol { font-size: 14px; line-height: 16px; }
     .quick-preset-slot { font-size: 9px; line-height: 9px; opacity: .68; }

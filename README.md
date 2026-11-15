@@ -16,6 +16,7 @@ Spiffy additions:
 - A coalescing brightness scheduler which preserves the final requested level.
 - A notification-resistant popup: Windows focus changes during opening no longer instantly dismiss the controls, and the flyout stays usable while the cursor remains over it.
 - Adaptive quick-preset icons: saved brightness changes icon luminance and saved warmth adds a subtle amber tint without replacing the chosen symbol.
+- Preset clicks remain responsive during slow monitor operations: at most one in-flight command plus the latest requested preset is retained. Duplicate selections do not cause redundant hardware writes, and preset slot numbers remain legible at low icon brightness.
 - On machines without the separate Spiffy filter runtime, optional extended sliders are restricted to standard 0–100%. Per-monitor warmth is not exposed until the canonical filter owner reports safely matched displays.
 
 No analytics, mandatory accounts or automatic upstream update installs.
@@ -34,7 +35,7 @@ Install Node 22 or newer and Visual Studio C++ Build Tools on Windows.
 
 Commands: npm ci ; npm test ; npm run parcel-build ; npx electron-builder --x64 --win nsis --publish never.
 
-Mac source build command: `npm run mac-build` on an Apple Silicon Mac with its local Node/Electron build toolchain; `electron-builder.mac.json` packages the Mac host and shared React panel without Windows native add-ons. This path has not yet passed macOS packaging, signing, notarization or physical display tests. Do not advertise a finished Mac release based on source-level mocks.
+Mac source build command: `npm run mac-build` on an Apple Silicon Mac with its local Node/Electron build toolchain; `electron-builder.mac.json` packages the Mac host and shared React panel without rebuilding Windows native add-ons. CI tests the unsigned bundle structure separately from source compilation. Until those checks pass and real displays, signing and notarization have been verified, do not advertise a certified Mac release.
 
 Run only verified locally built installers. Avoid two brightness-control apps driving the same DDC devices. Build, cache and debug files are excluded from Git.
 

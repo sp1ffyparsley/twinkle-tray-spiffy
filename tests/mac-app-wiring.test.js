@@ -10,6 +10,7 @@ test('the macOS package reuses the existing React panel and presets without Wind
   const config = JSON.parse(fs.readFileSync(path.join(root, 'electron-builder.mac.json'), 'utf8'))
   const packageData = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'))
   assert.equal(config.appId, packageData.build.appId)
+  assert.equal(config.npmRebuild, false, 'Mac packaging must not compile Windows-only DDC native addons')
   assert.equal(config.extraMetadata.main, 'src/MacMain.js')
   assert.ok(config.files.includes('build/index.html'))
   assert.ok(config.files.includes('build/mac-settings.html'))

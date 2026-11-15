@@ -1,6 +1,6 @@
 {
   "name": "twinkle-tray-spiffy",
-  "version": "1.17.2-spiffy.7",
+  "version": "1.17.2-spiffy.8",
   "description": "Twinkle Tray Spiffy: compact, local monitor brightness controls with optional per-display warmth and five portable presets",
   "main": "src/electron.js",
   "scripts": {
@@ -74,6 +74,7 @@
       "src/BrightnessUpdateScheduler.js",
       "src/PopupFocusGuard.js",
       "src/PresetAppearance.js",
+      "src/PresetIntentQueue.js",
       "src/QuickPresets.js",
       "src/ExtendedBrightness.js",
       "src/brightness-state.py",
