@@ -12,6 +12,11 @@ jobs:
     name: Windows source and package
     runs-on: windows-2025
     timeout-minutes: 25
+    env:
+      # VS 2026 rejects a deprecated coroutine include in upstream
+      # windows-accent-colors while node-gyp forces /std:c++17.
+      # Suppress only that deprecation, not other native compiler errors.
+      CL: /D_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS
     steps:
       - name: Checkout
         uses: actions/checkout@v4
