@@ -2,7 +2,12 @@ const test = require('node:test')
 const assert = require('node:assert/strict')
 const { NightFilter, validatePatch, parseResult } = require('../src/NightFilter')
 const path = require('node:path')
+const fs = require('node:fs')
 const scriptsRoot = path.resolve(__dirname, '../..')
+// Simulated child/IPC tests do not need the private optional Spiffy Workspace.
+// The real helper is checked only in the separately marked integration case.
+const simulatedFilter = options => new NightFilter({ scriptsRoot, fileExists: () => true, ...options })
+const nativeHelperExists = fs.existsSync(path.join(scriptsRoot, 'utilities', 'powershell', 'Set-NightLight.ps1'))
 const result = overrides => JSON.stringify({ kind: 'custom_filter', enabled: 0, worker_running: 0,
   strength: 40, dimness: 0, tint: 0, dim_duration_minutes: 180, error: false, ...overrides })
 const settled = bridge => new Promise(resolve => {
@@ -22,7 +27,7 @@ test('strict IPC validation rejects injections, malformed fields and out-of-rang
 
 test('3000 slider requests merge into one final child command without enabling a disabled filter', async () => {
   const calls = []
-  const bridge = new NightFilter({ scriptsRoot, debounceMs: 0, run: (_exe, args, options, callback) => {
+  const bridge = simulatedFilter({ debounceMs: 0, run: (_exe, args, options, callback) => {
     calls.push({ args, options })
     setImmediate(() => callback(null, result()))
   } })
@@ -39,7 +44,7 @@ test('3000 slider requests merge into one final child command without enabling a
 
 test('off queued during startup runs after startup, with at most one live child', async () => {
   const calls = []; let active = 0; let peak = 0; let release
-  const bridge = new NightFilter({ scriptsRoot, debounceMs: 0, run: (_exe, args, _options, callback) => {
+  const bridge = simulatedFilter({ debounceMs: 0, run: (_exe, args, _options, callback) => {
     const mode = args[args.indexOf('-Mode') + 1]
     calls.push(mode); peak = Math.max(peak, ++active)
     const complete = () => { active--; callback(null, result({ enabled: mode === 'FilterOn' ? 1 : 0, worker_running: mode === 'FilterOn' ? 1 : 0 })) }
@@ -57,7 +62,7 @@ test('off queued during startup runs after startup, with at most one live child'
 
 test('uncertain failure discards queued mutations; explicit refresh reconciles without replay', async () => {
   const calls = []; let release
-  const bridge = new NightFilter({ scriptsRoot, debounceMs: 0, run: (_exe, args, _options, callback) => {
+  const bridge = simulatedFilter({ debounceMs: 0, run: (_exe, args, _options, callback) => {
     const mode = args[args.indexOf('-Mode') + 1]; calls.push(mode)
     if (mode === 'FilterOn') release = () => callback({ killed: true }, '')
     else setImmediate(() => callback(null, result()))
@@ -79,7 +84,7 @@ test('missing owner fails visibly without starting a process', async () => {
 
 test('toggle reads external state and explicit off supersedes queued toggle', async () => {
   const calls = []
-  const bridge = new NightFilter({ scriptsRoot, debounceMs: 0, run: (_exe, args, _options, callback) => {
+  const bridge = simulatedFilter({ debounceMs: 0, run: (_exe, args, _options, callback) => {
     const mode = args[args.indexOf('-Mode') + 1]; calls.push(mode)
     setImmediate(() => callback(null, result({ enabled: mode === 'FilterStatus' ? 1 : 0 })))
   } })
@@ -93,7 +98,7 @@ test('toggle reads external state and explicit off supersedes queued toggle', as
 })
 
 test('actual installed PowerShell helper returns authoritative status without display mutation',
-  { skip: process.platform !== 'win32', timeout: 20000 }, async () => {
+  { skip: process.platform !== 'win32' || !nativeHelperExists, timeout: 20000 }, async () => {
     const bridge = new NightFilter({ scriptsRoot })
     const done = settled(bridge); bridge.refresh()
     const state = await done
@@ -104,7 +109,7 @@ test('actual installed PowerShell helper returns authoritative status without di
 
 test('On cannot reactivate the old hidden 80 percent global dimming', async () => {
   const calls = []
-  const bridge = new NightFilter({ scriptsRoot, debounceMs: 0, run: (_exe, args, _options, callback) => {
+  const bridge = simulatedFilter({ debounceMs: 0, run: (_exe, args, _options, callback) => {
     const mode = args[args.indexOf('-Mode') + 1]
     calls.push(args)
     setImmediate(() => callback(null, result({ strength: 99, dimness: mode === 'FilterStatus' ? 80 : 0, enabled: mode === 'FilterOn' ? 1 : 0 })))
@@ -117,7 +122,7 @@ test('On cannot reactivate the old hidden 80 percent global dimming', async () =
 
 test('live slider edits use the existing renderer and uncertain replies never fall back to mutation', async () => {
   let fail = false; const calls = []
-  const bridge = new NightFilter({ scriptsRoot, debounceMs: 0,
+  const bridge = simulatedFilter({ debounceMs: 0,
     run: () => assert.fail('No PowerShell launch while renderer is connected'),
     resident: async (mode, patch) => {
       calls.push([mode, patch])
@@ -133,7 +138,7 @@ test('live slider edits use the existing renderer and uncertain replies never fa
 
 test('renderer exit during final effect removal reconciles Ensure, but never repeats an uncertain On', async () => {
   const calls = []
-  const bridge = new NightFilter({ scriptsRoot, debounceMs: 0,
+  const bridge = simulatedFilter({ debounceMs: 0,
     resident: async () => { throw Error('Resident filter closed before confirming the change') },
     run: (_exe, args, _options, callback) => { calls.push(args[args.indexOf('-Mode') + 1]); setImmediate(() => callback(null, result())) } })
   assert.equal((await bridge.ensure()).running, false)

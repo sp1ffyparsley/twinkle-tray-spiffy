@@ -44,6 +44,7 @@ function harness() {
     scriptsRoot: root,
     pythonPath: process.execPath,
     spawnProcess: mockSpawn,
+    fileExists: () => true,
     idleMs: 500,
   })
   return { bridge, requests, children }
@@ -84,4 +85,17 @@ test('strength zero produces a local OFF without global/all-displays commands', 
   })
   assert.equal(h.requests.filter(r => r.payload.target_id === 'all').length, 0)
   h.bridge.close()
+})
+
+test('a clean computer without the optional filter runtime fails closed before launching a process', async () => {
+  let spawned = false
+  const bridge = new NightFilterDisplayBridge({
+    scriptsRoot: root,
+    pythonPath: process.execPath,
+    fileExists: () => false,
+    spawnProcess: () => { spawned = true; throw Error('Must not spawn') },
+  })
+  await assert.rejects(bridge.status(), /runtime is unavailable/)
+  assert.equal(spawned, false)
+  bridge.close()
 })

@@ -43,6 +43,23 @@ jobs:
         run: npm run parcel-build
       - name: Build unsigned Windows QA package without publishing
         run: npx electron-builder --x64 --win nsis --publish never
+      - name: Checksum unsigned Windows preview
+        shell: pwsh
+        run: |
+          $binaries = @(Get-ChildItem -LiteralPath dist-local -File -Filter '*.exe')
+          if ($binaries.Count -ne 1) { throw "Expected one preview installer, found $($binaries.Count)" }
+          $sha = (Get-FileHash $binaries[0].FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$sha  $($binaries[0].Name)" | Set-Content -LiteralPath dist-local/SHA256SUMS.txt -Encoding ascii
+      - name: Attach Windows QA preview, not a public release
+        uses: actions/upload-artifact@v4
+        with:
+          name: Spiffy-Windows-x64-unsigned-preview
+          path: |
+            dist-local/*.exe
+            dist-local/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
 
   mac-source:
     name: macOS source and shared-panel verification
@@ -96,3 +113,24 @@ jobs:
               throw Error("Wrong packaged Mac entry point");
             console.log("MAC_BUNDLE_STRUCTURE_VERIFIED");
           ' "$asar"
+      - name: Checksum unsigned Apple Silicon preview
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          files=(dist-macos/*.zip)
+          if [ "${#files[@]}" -ne 1 ]; then
+            echo "Expected one Mac arm64 zip preview, found ${#files[@]}"
+            exit 1
+          fi
+          shasum -a 256 "${files[0]}" > dist-macos/SHA256SUMS.txt
+      - name: Attach Mac QA preview, not a public release
+        uses: actions/upload-artifact@v4
+        with:
+          name: Spiffy-Mac-arm64-unsigned-preview
+          path: |
+            dist-macos/*.zip
+            dist-macos/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0

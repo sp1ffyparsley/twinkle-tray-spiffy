@@ -10,12 +10,13 @@ const fs = require('node:fs')
 const SCHEMA = 'spiffy_command_palette_shell_adapter_v1'
 
 class NightFilterDisplayBridge extends EventEmitter {
-  constructor({ scriptsRoot, pythonPath, spawnProcess = spawn, idleMs = 12000, timeoutMs = 10000 }) {
+  constructor({ scriptsRoot, pythonPath, spawnProcess = spawn, fileExists = fs.existsSync, idleMs = 12000, timeoutMs = 10000 }) {
     super()
     if (!scriptsRoot || !path.isAbsolute(scriptsRoot)) throw Error('A known SS Scripts root is required')
     this.scriptsRoot = scriptsRoot
     this.pythonPath = pythonPath || path.join(scriptsRoot, 'Spiffy Workspace', '.venv', 'Scripts', 'python.exe')
     this.spawnProcess = spawnProcess
+    this.fileExists = fileExists
     this.idleMs = idleMs
     this.timeoutMs = timeoutMs
     this.child = null
@@ -30,9 +31,9 @@ class NightFilterDisplayBridge extends EventEmitter {
   start() {
     if (this.closed) throw Error('Night Filter connection is closed')
     if (this.child) return this.child
-    if (!fs.existsSync(this.pythonPath)) throw Error('Existing Spiffy Python runtime is unavailable')
+    if (!this.fileExists(this.pythonPath)) throw Error('Existing Spiffy Python runtime is unavailable')
     const modulesPath = path.join(this.scriptsRoot, 'command_palette', 'workers', 'python', 'src')
-    if (!fs.existsSync(path.join(modulesPath, 'sscp', 'command_palette_shell_adapter.py'))) {
+    if (!this.fileExists(path.join(modulesPath, 'sscp', 'command_palette_shell_adapter.py'))) {
       throw Error('Existing Command Palette Night Filter adapter is missing')
     }
     const child = this.spawnProcess(this.pythonPath, [

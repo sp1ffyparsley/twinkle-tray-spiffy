@@ -86,6 +86,28 @@ test('switching back to the already-running preset cancels a queued intermediate
   assert.deepEqual(applied, [1])
 })
 
+test('ten thousand rapid preset intents do not grow a hardware command backlog', async () => {
+  const first = deferred()
+  const calls = []
+  let completed = 0
+  const queue = createPresetIntentQueue({
+    apply(slot) {
+      calls.push(slot)
+      return calls.length === 1 ? first.promise : Promise.resolve({ ok: true })
+    },
+    onResult: () => completed++,
+  })
+  queue.press(1)
+  for (let index = 0; index < 10000; index++) queue.press((index % 5) + 1)
+  assert.deepEqual(calls, [1], 'Only the first native command should run while hardware is blocked')
+  first.resolve({ ok: true })
+  await flush()
+  assert.ok(calls.length <= 2, 'Ten thousand pointer events must not become a native command queue')
+  assert.equal(calls.at(-1), 5, 'Last requested preset must win')
+  assert.equal(completed, 1)
+  queue.dispose()
+})
+
 test('invalid slots and post-disposal commands never call native hardware', async () => {
   const applied = []
   const queue = createPresetIntentQueue({

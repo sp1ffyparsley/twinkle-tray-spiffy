@@ -1,6 +1,6 @@
 {
   "name": "twinkle-tray-spiffy",
-  "version": "1.17.2-spiffy.8",
+  "version": "1.17.2-spiffy.9",
   "description": "Twinkle Tray Spiffy: compact, local monitor brightness controls with optional per-display warmth and five portable presets",
   "main": "src/electron.js",
   "scripts": {
@@ -37,7 +37,6 @@
     "@paymoapp/active-window": "file:src/modules/node-active-window",
     "acrylic": "file:src/modules/acrylic",
     "color": "^4.2.3",
-    "ga4-mp": "^1.0.3",
     "global-mouse-events": "^1.2.0",
     "markdown-to-jsx": "^7.5.0",
     "stackblur-canvas": "^2.7.0",

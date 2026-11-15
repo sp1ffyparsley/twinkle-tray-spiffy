@@ -83,11 +83,12 @@ function parseResult(stdout) {
 }
 
 class NightFilter extends EventEmitter {
-  constructor({ scriptsRoot, run = execFile, resident = run === execFile ? residentCommand : null, logger = () => {}, debounceMs = 40, timeoutMs = 15000 }) {
+  constructor({ scriptsRoot, run = execFile, resident = run === execFile ? residentCommand : null, fileExists = fs.existsSync, logger = () => {}, debounceMs = 40, timeoutMs = 15000 }) {
     super()
     this.script = path.join(scriptsRoot, 'utilities', 'powershell', 'Set-NightLight.ps1')
     this.executable = path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe')
     this.run = run
+    this.fileExists = fileExists
     this.resident = resident === residentCommand ? (mode, patch) => residentCommand(mode, patch, scriptsRoot) : resident
     this.logger = logger
     this.debounceMs = debounceMs
@@ -154,7 +155,7 @@ class NightFilter extends EventEmitter {
   }
 
   async execute(mode, patch = {}) {
-    if (!fs.existsSync(this.script)) throw Error(`Night Filter helper is missing: ${this.script}. Restore SS Scripts or correct nightFilterScriptsRoot in settings.`)
+    if (!this.fileExists(this.script)) throw Error(`Night Filter helper is missing: ${this.script}. Restore SS Scripts or correct nightFilterScriptsRoot in settings.`)
     const started = Date.now()
     if (this.resident) {
       let live
