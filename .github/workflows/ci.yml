@@ -10,13 +10,12 @@ permissions:
 jobs:
   windows:
     name: Windows source and package
-    runs-on: windows-2025
+    # The upstream windows-accent-colors native addon still requires MSVC
+    # v143/Visual Studio 2022. VS 2026 breaks its deprecated coroutine header
+    # and older node-gyp versions cannot reliably discover VS 18.x.
+    # Keep an actual native build in CI rather than using --ignore-scripts.
+    runs-on: windows-2022
     timeout-minutes: 25
-    env:
-      # VS 2026 rejects a deprecated coroutine include in upstream
-      # windows-accent-colors while node-gyp forces /std:c++17.
-      # Suppress only that deprecation, not other native compiler errors.
-      CL: /D_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -56,3 +55,33 @@ jobs:
           node --test tests/mac-*.test.js tests/popup-focus-guard.test.js tests/preset-appearance.test.js tests/quick-presets.test.js
       - name: Compile the shared React brightness panel
         run: npm run parcel-build
+      - name: Package unsigned Apple Silicon Mac app for structural QA
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        run: npx electron-builder --mac zip --arm64 --config electron-builder.mac.json --publish never
+      - name: Verify the bundled Mac executable and shared UI
+        shell: bash
+        run: |
+          set -euo pipefail
+          app=$(find dist-macos -type d -name 'Twinkle Tray Spiffy.app' -print -quit)
+          test -n "$app"
+          test -f "$app/Contents/MacOS/Twinkle Tray Spiffy"
+          asar="$app/Contents/Resources/app.asar"
+          test -f "$asar"
+          node -e '
+            const asar = require("@electron/asar");
+            const p = process.argv[1];
+            const required = [
+              "src/MacMain.js", "src/MacDisplayBackend.js",
+              "src/MacBuiltInBackend.js", "src/QuickPresets.js",
+              "src/MonitorWarmthMapping.js", "src/panel-preload.js",
+              "build/index.html", "build/mac-settings.html",
+              "build/panel.799762b8.js"
+            ];
+            for (const item of required) {
+              if (!asar.extractFile(p,item).length) throw Error("Missing Mac bundle resource: "+item);
+            }
+            if (JSON.parse(asar.extractFile(p,"package.json")).main !== "src/MacMain.js")
+              throw Error("Wrong packaged Mac entry point");
+            console.log("MAC_BUNDLE_STRUCTURE_VERIFIED");
+          ' "$asar"
